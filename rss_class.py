@@ -59,7 +59,7 @@ class Rss:
     # Gets the next RSS entry from the rss array
     def getFeed(self):
         self.feed_available = False
-        line = "No RSS feed"
+        feed = "No RSS feed"
         if self.length < 1:
             self.rss = self.get_new_feed(url)    
             self.length = self.rss.__len__()
