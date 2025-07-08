@@ -1801,7 +1801,8 @@ class Radio:
                     x = self.getSearchName()
 
         if not changed:
-            changed = self.checkAdded()
+            if source_type == self.source.RADIO:
+                changed = self.checkAdded()
         return changed
 
     # Get URL for recording process
