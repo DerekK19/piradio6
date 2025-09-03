@@ -1,7 +1,7 @@
 #!/bin/bash
 # set -x
 # Raspberry Pi Internet Radio
-# $Id: diagnostics.sh,v 1.8 2025/01/31 12:05:07 bob Exp $
+# $Id: diagnostics.sh,v 1.10 2025/07/13 10:40:45 bob Exp $
 #
 # Author : Bob Rathbone
 # Site   : http://www.bobrathbone.com
@@ -32,6 +32,7 @@ CMARK_EXE="/usr/bin/cmark"
 LYNX=/usr/bin/lynx
 SCRIPTS_DIR=${DIR}/scripts
 DOCS_DIR=${DIR}/docs
+SPEAKER_TEST="speaker-test -t sine -D default -l 1"
 
 function build_report
 {
@@ -64,7 +65,8 @@ do
         "4" "Test events layer" \
         "5" "Test configured display" \
         "6" "Test GPIOs" \
-        "7" "Display Radio and OS configuration" 3>&1 1>&2 2>&3)
+        "7" "Speaker test (speaker-test)" \
+        "8" "Display Radio and OS configuration" 3>&1 1>&2 2>&3)
 
     exitstatus=$?
     if [[ $exitstatus != 0 ]]; then
@@ -115,6 +117,12 @@ do
         exit 0
 
     elif [[ ${ans} == '7' ]]; then
+        sudo systemctl stop radiod.service
+        echo "Press Ctrl-Z to exit speaker test (Takes a few seconds to stop)"
+        ${SPEAKER_TEST}
+        exit 0
+
+    elif [[ ${ans} == '8' ]]; then
         INFO=1
     fi
 
@@ -131,7 +139,7 @@ do
         "6" "Display full radio configuration" \
         "7" "Display formatted /etc/radiod.conf" \
         "8" "Display current Music Player Daemon output" \
-        "9" "Display Sound Cards" \
+        "9" "Display Audio Configuration" \
          3>&1 1>&2 2>&3)
 
         exitstatus=$?
@@ -181,9 +189,9 @@ do
             ${DIR}/display_current.py > ${TEMPFILE}
 
         elif [[ ${ans} == '9' ]]; then
-            TITLE="Sound cards configuration"
+            TITLE="Audio configuration"
             build_report "${TITLE}"
-            aplay -l > ${TEMPFILE}
+            ${SCRIPTS_DIR}/display_audio.sh > ${TEMPFILE}
         fi
 
         if [[ ${run_info} == 1 ]]; then

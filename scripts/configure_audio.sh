@@ -1,7 +1,7 @@
 #!/bin/bash
 # set -x
 # Raspberry Pi Internet Radio Audio configuration script 
-# $Id: configure_audio.sh,v 1.17 2025/06/25 11:08:18 bob Exp $
+# $Id: configure_audio.sh,v 1.21 2025/07/14 14:26:03 bob Exp $
 #
 # Author : Bob Rathbone
 # Site   : http://www.bobrathbone.com
@@ -57,6 +57,7 @@ MIXER_ID_FILE=${LIBDIR}/mixer_volume_id
 PULSE_PA=/etc/pulse/default.pa
 OS_RELEASE=/etc/os-release
 AUDIO_OUT_CARD=${LIBDIR}/audio_out_card
+DKMS=/usr/sbin/dkms
 
 # Waveshare WM8960 DAC alsamixer commands
 WM8960_ALSA_STORE="sudo alsactl store --file  /etc/wm8960-soundcard/wm8960_asound.state"
@@ -369,7 +370,7 @@ do
         DTOVERLAY="wm8960-soundcard"
         MIXER="software"
         TYPE=${WM8960}
-        LOCK_CONFIG=1   
+        LOCK_CONFIG=0   
         ASOUND_CONF_DIST=${ASOUND_CONF_DIST}.wm8960
 
     elif [[ ${ans} == '18' ]]; then
@@ -507,11 +508,15 @@ elif [[ ${INSTALL_WM8960} == '1' ]]; then
         no_install "Waveshare WM8960 Hat"
 
     else
-        status=$(dkms status wm8960-soundcard)  
+        if [[ ! -x ${DKMS} ]]; then
+            echo "Installing dkms" | tee -a ${LOG}
+            sudo apt install dkms
+        fi
+        status=$(${DKMS} status wm8960-soundcard)  
         echo ${status} | tee -a ${LOG}
         if [[ ${status} == "" ]]; then  
             echo | tee -a ${LOG}
-            cd ${DIR}/WM8960-Audio-HAT 
+            cd ${SCRIPTS_DIR}
             echo "Installng Waveshare DAC driver (wm8960-soundcard)" | tee -a ${LOG}
             sudo ./install_wm8960.sh | tee -a ${LOG}
         else
@@ -536,6 +541,7 @@ elif [[ ${REMOVE_WM8960} == '1' ]]; then
         fi
         sudo rm -rf /etc/wm8960-soundcard | tee -a ${LOG}
         sudo sed -i '/dtoverlay=wm8960-soundcard/d' ${BOOTCONFIG}
+        sudo rm -rf /etc/wm8960-soundcard
     else
         echo "${DIR}/WM8960-Audio-HAT already un-installed" | tee -a ${LOG}
     fi
@@ -817,12 +823,6 @@ else
         sudo sed -i 's/^dtparam=audio=.*$/dtparam=audio=on/g'  ${BOOTCONFIG}
         sudo sed -i 's/^#dtparam=audio=.*$/dtparam=audio=on/g'  ${BOOTCONFIG}
     fi
-fi
-
-# Disable HDMI vc4 driver
-if [[ ${TYPE} != ${HDMI} ]]; then
-    echo "Disable HDMI vc4 driver" | tee -a ${LOG}
-    sudo sed -i 's/^dtoverlay=vc4-kms-v3d.*$/#dtoverlay=vc4-kms-v3d/g' ${BOOTCONFIG}
 fi
 
 # Load the audio card overlay

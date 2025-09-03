@@ -2,7 +2,7 @@
 #
 # Raspberry Pi Radio daemon
 #
-# $Id: radiod.py,v 1.204 2025/05/12 19:11:08 bob Exp $
+# $Id: radiod.py,v 1.208 2025/07/31 13:46:45 bob Exp $
 #
 # Author : Bob Rathbone
 # Site   : http://www.bobrathbone.com
@@ -96,6 +96,9 @@ def signalHandler(signal,frame):
     global radio
     global log
 
+    msg = "Received termination signal " + str(signal)
+    log.message(msg,log.INFO)
+
     # Switch on red LED
     statusLed.set(StatusLed.ERROR)
 
@@ -150,6 +153,8 @@ def interrupt():
 
     if display.hasButtons():
         display.checkButton()
+
+    radio.checkStatus()
     return interrupt
 
 # Daemon class
@@ -270,13 +275,13 @@ class MyDaemon(Daemon):
                     displayOptions(display,radio,menu,message)
 
                 elif menu_mode == menu.MENU_RSS:
-                    if display.hasScreen():
+                    if display.hasScreen() and rss.isAvailable():
                         if display.volume_delay:
                             displayVolume(display,radio)
                         else:
                             displayRss(display,radio,message,rss)
                     else:
-                        menu.set(menu.MENU_TIME) # Skip RSS
+                        menu.set(menu.MENU_INFO) # Skip RSS
 
                 elif menu_mode == menu.MENU_INFO:
                     if display.volume_delay:
@@ -323,6 +328,7 @@ class MyDaemon(Daemon):
 
                 # Check if liquidsoap is recording
                 self.recording = radio.isRecording()
+
 
                 # This delay is important. Don't remove or
                 # button/encoder events will be missed
@@ -981,7 +987,7 @@ def displayTimeDate(display,radio,message):
             search_name = radio.getSearchName()
             if len(msg + " " + search_name) > width:
                 msg = msg[:5]
-            msg = msg + " " + search_name 
+            msg = msg +  recording_ind + streaming +  " " + search_name 
             display.out(1,msg[:width])
 
         elif sourceType == radio.source.MEDIA:
