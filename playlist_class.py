@@ -202,7 +202,7 @@ class Playlist:
             print("File update failed: " + str(e))
 
     # Load playlist by name
-    def load(self,client,name):
+    def load(self,client,name,pinger):
         try:
             self._name = name
             client.clear()
@@ -210,17 +210,17 @@ class Playlist:
             client.update(name)
             self._plist = client.playlist()
             self._type = self.getType(name)
-            self._searchlist = self.createSearchList(client)
+            self._searchlist = self.createSearchList(client,pinger)
             #print("Name=%s Type=%s Size=%s"% (self._name, self._type, self._size))
         except Exception as e:
             print("playlist.load",str(e))
         return self._searchlist
 
     # Create search list of tracks or stations
-    def createSearchList(self,client):
+    def createSearchList(self,client,pinger):
         if self.config.station_names == self.config.STREAM or self._type == source.MEDIA:
             self._plist = client.playlist()
-            searchlist = self._createStreamSearchList(self._plist)
+            searchlist = self._createStreamSearchList(self._plist,pinger)
         else:
             searchlist = self._createListSearch()
 
@@ -252,7 +252,7 @@ class Playlist:
         return searchlist
 
     # Create search list from MPD stream
-    def _createStreamSearchList(self,plist):
+    def _createStreamSearchList(self,plist,pinger):
         searchlist = []
 
         for line in plist:
@@ -274,6 +274,7 @@ class Playlist:
                 else:
                     name = artist + ' - ' + title
             searchlist.append(name)
+            pinger()
 
         self._size = len(plist)
 

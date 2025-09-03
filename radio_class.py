@@ -1120,6 +1120,7 @@ class Radio:
         if now > self.pingTime + self.pingDelay:
             self.pingTime = now
             try:
+                log.message("ping", log.WARNING)
                 self.client.ping()
             except Exception as e:
                 log.message("radio.ping: " + str(e),log.ERROR)
@@ -2285,7 +2286,7 @@ class Radio:
         log.message(msg, log.DEBUG)
 
         try:
-            self.PL.load(self.client,pname)
+            self.PL.load(self.client,pname,self.ping)
             if self.PL.size < 1:
                 log.message("Playlist " + pname + " is empty", log.ERROR)
                 self.current_id = 0
@@ -2319,6 +2320,7 @@ class Radio:
                     playlist = self.source.getName()
                     log.message("Loading playlist " + playlist, log.INFO)
                     self.execMpcCommand("load " + playlist)
+                    log.message("Loaded", log.INFO)
             else:
                 self.loading_DB = False
             self.setUpdateLibOff() # Check TO DO
