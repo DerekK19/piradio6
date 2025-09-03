@@ -1801,9 +1801,8 @@ class Radio:
                     self.storeIntegerValue (self.current_id,CurrentStationFile)
                     x = self.getSearchName()
 
-        if not changed:
-            if source_type == self.source.RADIO:
-                changed = self.checkAdded()
+        if not changed and source_type == self.source.RADIO:
+            changed = self.checkAdded()
         return changed
 
     # Get URL for recording process
